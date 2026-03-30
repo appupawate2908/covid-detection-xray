@@ -139,7 +139,9 @@ function AnalysePage({ sessionId, onNewResult }) {
         onNewResult?.()
       } catch {}
     } catch (err) {
-      dispatch({ type: 'ERROR', message: err.response?.data?.detail || err.message || 'Analysis failed' })
+      const detail = err.response?.data?.detail
+      const message = typeof detail === 'object' ? (detail?.message || 'Invalid image') : (detail || err.message || 'Analysis failed')
+      dispatch({ type: 'ERROR', message })
     }
   }, [sessionId, onNewResult])
 

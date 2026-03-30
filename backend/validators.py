@@ -44,10 +44,11 @@ def validate_xray_image(image_bytes: bytes) -> tuple[bool, str]:
 
     # Check 3 — intensity distribution (X-rays have wide dynamic range:
     # dark lung fields and bright bone/soft-tissue regions)
-    grey = arr.mean(axis=2)                 # shape (H, W)
-    dark_fraction   = (grey < 85).mean()    # fraction of pixels that are dark
-    bright_fraction = (grey > 200).mean()   # fraction of pixels that are bright
-    if dark_fraction < 0.30 or bright_fraction < 0.03:
+    grey = arr.mean(axis=2)                  # shape (H, W)
+    dark_fraction   = (grey < 100).mean()    # fraction of darker pixels
+    bright_fraction = (grey > 180).mean()    # fraction of brighter pixels
+    # Loose check — just ensure image isn't a completely flat/uniform colour
+    if dark_fraction < 0.10 or bright_fraction < 0.01:
         return False, "Intensity distribution does not match a chest X-ray"
 
     return True, ""
