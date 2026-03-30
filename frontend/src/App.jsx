@@ -89,7 +89,6 @@ function Disclaimer() {
 
 /* ─── State Machine ───────────────────────────────────── */
 // States: XRAY → UI_UPDATE → ANALYSIS → FOUND → REPORT | ERROR
-// Matches the state machine diagram in the dissertation.
 const initialXrayState = { phase: 'XRAY', result: null, previewUrl: null, errorMsg: '' }
 
 function xrayReducer(state, action) {
@@ -106,12 +105,10 @@ function xrayReducer(state, action) {
 }
 
 /* ─── Upload / Results Page ───────────────────────────── */
-function AnalysePage({ sessionId, onNewResult }) {
-  const [xrayState, dispatch] = useReducer(xrayReducer, initialXrayState)
-
+function AnalysePage({ sessionId, onNewResult, xrayState, dispatch }) {
   const handleFileSelected = useCallback((_, url) => {
     dispatch({ type: 'FILE_SELECTED', previewUrl: url })
-  }, [])
+  }, [dispatch])
 
   const handleUpload = useCallback(async (file) => {
     dispatch({ type: 'SUBMIT' })
@@ -143,14 +140,44 @@ function AnalysePage({ sessionId, onNewResult }) {
       const message = typeof detail === 'object' ? (detail?.message || 'Invalid image') : (detail || err.message || 'Analysis failed')
       dispatch({ type: 'ERROR', message })
     }
-  }, [sessionId, onNewResult])
+  }, [sessionId, onNewResult, dispatch])
 
   const handleReset = () => dispatch({ type: 'RESET' })
 
   const { phase, result, previewUrl, errorMsg } = xrayState
 
+  const hasResult = (phase === 'FOUND' || phase === 'REPORT') && result
+
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
+
+      {/* "New Analysis" strip — shown when a result is already loaded */}
+      {hasResult && (
+        <div className="flex items-center justify-between mb-6 px-5 py-3 rounded-2xl anim-fade-up"
+             style={{ background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+            <span className="text-sm font-semibold" style={{ color: '#15803d' }}>
+              Analysis complete — results saved to Progression
+            </span>
+          </div>
+          <button
+            onClick={handleReset}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-150"
+            style={{ background: '#fff', border: '1px solid #bbf7d0', color: '#15803d',
+                     boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#dcfce7'}
+            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M12 7A5 5 0 1 1 7 2V1M7 1L5 3M7 1l2 2"
+                    stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Analyse New X-ray
+          </button>
+        </div>
+      )}
+
       {(phase === 'XRAY' || phase === 'UI_UPDATE' || phase === 'ANALYSIS') && (
         <div className="anim-fade-up">
           <UploadZone
@@ -182,7 +209,7 @@ function AnalysePage({ sessionId, onNewResult }) {
         </div>
       )}
 
-      {(phase === 'FOUND' || phase === 'REPORT') && result && (
+      {hasResult && (
         <div className="anim-slide-up">
           <ResultCard result={result} previewUrl={previewUrl} onReset={handleReset} />
         </div>
@@ -202,6 +229,9 @@ export default function App() {
   })
   const [progKey, setProgKey] = useState(0)
 
+  // Lifted up so results survive navigation between Analyse ↔ Progression
+  const [xrayState, dispatch] = useReducer(xrayReducer, initialXrayState)
+
   return (
     <BrowserRouter>
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -210,7 +240,12 @@ export default function App() {
         <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={
-              <AnalysePage sessionId={sessionId} onNewResult={() => setProgKey(k => k + 1)} />
+              <AnalysePage
+                sessionId={sessionId}
+                onNewResult={() => setProgKey(k => k + 1)}
+                xrayState={xrayState}
+                dispatch={dispatch}
+              />
             } />
             <Route path="/progression" element={
               <ProgressionTracker sessionId={sessionId} refreshKey={progKey} />
