@@ -86,10 +86,112 @@ const EXPLAIN = {
   },
 }
 
+/* ─── Clinical report card ─────────────────────────────── */
+function ClinicalReport({ report }) {
+  if (!report) return null
+  const uncColor =
+    report.uncertainty_level === 'Low'      ? '#16a34a' :
+    report.uncertainty_level === 'Moderate' ? '#ca8a04' : '#dc2626'
+  const confColor =
+    report.confidence_label === 'High'     ? '#16a34a' :
+    report.confidence_label === 'Moderate' ? '#ca8a04' :
+    report.confidence_label === 'Low'      ? '#ea580c' : '#dc2626'
+
+  return (
+    <div className="card overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#0d1f35,#1a3c5f)' }}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="text-xs font-bold tracking-widest uppercase mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              AI-Generated · 7156CEM Coventry University
+            </p>
+            <p className="font-extrabold text-lg text-white leading-tight">{report.title}</p>
+          </div>
+          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{report.generated_at}</p>
+        </div>
+      </div>
+
+      <div className="p-5 space-y-4">
+        {/* Warning banner */}
+        {report.warning && (
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl text-sm font-semibold"
+               style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}>
+            <span className="mt-0.5 shrink-0">⚠</span>
+            <span>{report.warning}</span>
+          </div>
+        )}
+
+        {/* Key metrics row */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'PREDICTION',   value: report.prediction,                  color: report.prediction === 'COVID-19' ? '#ef4444' : report.prediction === 'Normal' ? '#16a34a' : '#d97706' },
+            { label: 'CONFIDENCE',   value: `${report.confidence}% (${report.confidence_label})`, color: confColor },
+            { label: 'UNCERTAINTY',  value: `±${report.uncertainty}% (${report.uncertainty_level})`, color: uncColor },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-xl px-3 py-3 text-center"
+                 style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+              <p className="text-[10px] font-bold tracking-widest mb-1" style={{ color: 'var(--text-4)' }}>{label}</p>
+              <p className="text-xs font-bold leading-tight" style={{ color }}>{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Findings */}
+        <div>
+          <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'var(--text-4)' }}>Findings</p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{report.finding}</p>
+        </div>
+
+        {/* Impression */}
+        <div className="rounded-xl p-4" style={{ background: 'var(--blue-light)', border: '1px solid var(--blue-border)' }}>
+          <p className="text-xs font-bold tracking-widest uppercase mb-1.5" style={{ color: 'var(--blue)' }}>Impression</p>
+          <p className="text-sm font-semibold leading-relaxed" style={{ color: '#1e40af' }}>{report.impression}</p>
+        </div>
+
+        {/* Uncertainty statement */}
+        <div>
+          <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'var(--text-4)' }}>
+            Uncertainty Analysis · Monte Carlo Dropout
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{report.uncertainty_statement}</p>
+        </div>
+
+        {/* Severity + Recommendation */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-xl p-4" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <p className="text-xs font-bold tracking-widest uppercase mb-1.5" style={{ color: 'var(--text-4)' }}>Severity</p>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text-1)' }}>
+              Level {report.severity_level}/3 — {report.severity_label}
+            </p>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-3)' }}>{report.severity_guidance}</p>
+          </div>
+          <div className="rounded-xl p-4" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+            <p className="text-xs font-bold tracking-widest uppercase mb-1.5" style={{ color: 'var(--text-4)' }}>Recommendation</p>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>{report.recommendation}</p>
+          </div>
+        </div>
+
+        {/* Method */}
+        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-4)' }}>
+          <span className="font-semibold">Method:</span>
+          <span>{report.method}</span>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="rounded-xl p-3 text-xs leading-relaxed"
+             style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
+          {report.disclaimer}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Main report ──────────────────────────────────────── */
 export default function InterpretabilityReport({ result }) {
   if (!result) return null
-  const { prediction, confidence, probabilities, severity_level, severity_label, severity_guidance } = result
+  const { prediction, confidence, probabilities, severity_level, severity_label, severity_guidance, report } = result
   const exp = EXPLAIN[prediction] || EXPLAIN['Normal']
 
   const predColor =
@@ -103,6 +205,9 @@ export default function InterpretabilityReport({ result }) {
   return (
     <div className="space-y-3 anim-fade-up">
 
+      {/* Auto-generated clinical report (Feature B) */}
+      <ClinicalReport report={report} />
+
       {/* Summary box */}
       <div className="card p-5" style={{ borderLeft: `4px solid var(--blue)` }}>
         <p className="text-xs font-semibold mb-2" style={{ color: 'var(--blue)', fontFamily: '"IBM Plex Mono"' }}>
@@ -115,10 +220,14 @@ export default function InterpretabilityReport({ result }) {
 
       {/* Model decision */}
       <Section title="Model Decision Summary" badge="Inference" defaultOpen>
-        <KV label="Predicted Class"    value={prediction}              accent={predColor} />
-        <KV label="Confidence Score"   value={`${confidence.toFixed(2)}%`} accent={predColor} />
+        <KV label="Predicted Class"    value={prediction}                          accent={predColor} />
+        <KV label="Confidence Score"   value={`${confidence.toFixed(2)}%`}         accent={predColor} />
+        <KV label="Uncertainty (MC)"   value={`±${result.uncertainty?.toFixed(2)}% — ${result.uncertainty_level}`}
+                                       accent={result.uncertainty_level === 'Low' ? '#16a34a' : result.uncertainty_level === 'Moderate' ? '#ca8a04' : '#dc2626'} />
+        <KV label="MC Dropout Passes"  value={`${result.mc_passes || 30} stochastic forward passes`} />
         <KV label="Severity Level"     value={`L${severity_level} — ${severity_label}`} accent={sevColor} />
         <KV label="XAI Method"         value="Attention Rollout (Abnar & Zuidema, 2020)" />
+        <KV label="Uncertainty Method" value="Monte Carlo Dropout (Gal & Ghahramani, 2016)" />
         <KV label="Model Architecture" value="ViT-B/16 (google/vit-base-patch16-224-in21k)" />
         <KV label="Patch Resolution"   value="16×16 px · 196 patches · 12 layers" />
       </Section>
@@ -205,6 +314,7 @@ export default function InterpretabilityReport({ result }) {
           {[
             'Abnar & Zuidema (2020). Quantifying attention flow in transformers. ACL 2020.',
             'Dosovitskiy et al. (2020). An image is worth 16×16 words. ICLR 2021.',
+            'Gal & Ghahramani (2016). Dropout as a Bayesian approximation. ICML 2016.',
             'Zhang et al. (2023). ViT for medical image classification. IEEE J. BHI.',
             'Chowdhury et al. (2020). COVID-19 detection via CNN. IEEE Access.',
             'Wang & Wong (2020). COVID-Net. Scientific Reports.',

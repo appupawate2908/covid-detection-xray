@@ -94,10 +94,12 @@ export default function ResultCard({ result, previewUrl, onReset }) {
     prediction, confidence, probabilities,
     severity_level, severity_label, severity_guidance,
     heatmap_base64, timestamp,
+    uncertainty, uncertainty_level, requires_review,
   } = result
 
   const cfg = PCFG[prediction] || PCFG['Normal']
   const sevColor = ['#16a34a', '#ca8a04', '#ea580c', '#dc2626'][severity_level] || '#64748b'
+  const uncColor = uncertainty_level === 'Low' ? '#16a34a' : uncertainty_level === 'Moderate' ? '#ca8a04' : '#dc2626'
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -122,8 +124,19 @@ export default function ResultCard({ result, previewUrl, onReset }) {
         </button>
       </div>
 
+      {/* Uncertainty review banner */}
+      {requires_review && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold anim-fade-up"
+             style={{ background: '#fff7ed', border: '1px solid #fed7aa', color: '#c2410c' }}>
+          <span style={{ fontSize: 18 }}>⚠</span>
+          <span>
+            {uncertainty_level} model uncertainty (±{uncertainty?.toFixed(1)}%) — radiologist review recommended before clinical action.
+          </span>
+        </div>
+      )}
+
       {/* Stat cards row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 anim-fade-up">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 anim-fade-up">
         {/* Prediction */}
         <StatCard label="PREDICTION" borderColor={cfg.left}>
           <div className="flex items-center gap-2 mt-1">
@@ -166,6 +179,20 @@ export default function ResultCard({ result, previewUrl, onReset }) {
               </p>
             </div>
           </div>
+        </StatCard>
+
+        {/* Uncertainty */}
+        <StatCard label="UNCERTAINTY (MC)" borderColor={uncColor}>
+          <p className="font-extrabold text-2xl leading-none tracking-tight mt-1" style={{ color: uncColor }}>
+            ±{uncertainty?.toFixed(1)}<span className="text-sm font-semibold">%</span>
+          </p>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ background: uncColor }} />
+            <p className="text-xs font-semibold" style={{ color: uncColor }}>
+              {uncertainty_level} uncertainty
+            </p>
+          </div>
+          <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-4)' }}>30 MC Dropout passes</p>
         </StatCard>
       </div>
 
