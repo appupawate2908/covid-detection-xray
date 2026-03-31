@@ -61,7 +61,7 @@ function FeatureBadges() {
       {items.map(label => (
         <span key={label}
               className="text-xs font-medium px-3 py-1.5 rounded-full"
-              style={{ background: '#fff', border: '1px solid var(--border)', color: 'var(--text-3)',
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-3)',
                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
           {label}
         </span>
@@ -129,9 +129,9 @@ export default function UploadZone({ onUpload, onFileSelected, loading, previewU
       <div
         className="anim-zoom-in"
         style={{
-          border: `2px dashed ${dragging ? 'var(--blue)' : file ? '#bbf7d0' : 'var(--border)'}`,
+          border: `2px dashed ${dragging ? 'var(--blue)' : file ? 'var(--normal-border)' : 'var(--border)'}`,
           borderRadius: 20,
-          background: dragging ? 'var(--blue-light)' : file ? '#f0fdf4' : '#fff',
+          background: dragging ? 'var(--blue-light)' : file ? 'var(--normal-bg)' : 'var(--surface)',
           transition: 'all 0.2s ease',
           cursor: file ? 'default' : 'pointer',
           boxShadow: dragging ? '0 0 0 4px rgba(37,99,235,0.08)' : 'var(--shadow-card)',
@@ -201,7 +201,7 @@ export default function UploadZone({ onUpload, onFileSelected, loading, previewU
               <div className="flex items-center gap-2">
                 {['JPEG', 'PNG', 'Max 10 MB'].map(t => (
                   <span key={t} className="text-xs font-medium px-2.5 py-1 rounded-lg"
-                        style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-4)' }}>
+                        style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-4)' }}>
                     {t}
                   </span>
                 ))}
