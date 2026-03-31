@@ -132,9 +132,11 @@ function AnalysePage({ sessionId, onNewResult, xrayState, dispatch }) {
           severity_level: data.severity_level,
           severity_label: data.severity_label,
           heatmap_base64: data.heatmap_base64,
-        })
+        }, { timeout: 15000 })
         onNewResult?.()
-      } catch {}
+      } catch (saveErr) {
+        console.error('[Progression] Failed to save scan:', saveErr?.response?.data || saveErr?.message)
+      }
     } catch (err) {
       const detail = err.response?.data?.detail
       const message = typeof detail === 'object' ? (detail?.message || 'Invalid image') : (detail || err.message || 'Analysis failed')
