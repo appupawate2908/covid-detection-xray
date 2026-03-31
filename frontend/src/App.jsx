@@ -1,4 +1,4 @@
-import { useState, useCallback, useReducer } from 'react'
+import { useState, useCallback, useReducer, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import UploadZone from './components/UploadZone.jsx'
 import ResultCard from './components/ResultCard.jsx'
@@ -8,7 +8,7 @@ import axios from 'axios'
 const API_BASE = 'http://localhost:8000'
 
 /* ─── Navigation ──────────────────────────────────────── */
-function NavBar() {
+function NavBar({ dark, setDark }) {
   const { pathname } = useLocation()
 
   return (
@@ -57,13 +57,38 @@ function NavBar() {
           })}
         </nav>
 
-        {/* Status */}
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-          </span>
-          <span className="text-xs font-medium" style={{ color: 'var(--text-3)' }}>API Online</span>
+        {/* Right side — status + dark toggle */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            </span>
+            <span className="text-xs font-medium" style={{ color: 'var(--text-3)' }}>API Online</span>
+          </div>
+
+          {/* Dark mode toggle */}
+          <button
+            onClick={() => setDark(d => !d)}
+            className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
+            style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
+            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {dark ? (
+              /* Sun icon */
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="3" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+                      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              /* Moon icon */
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 10.5A6 6 0 0 1 5.5 2.5a6 6 0 1 0 8 8z"
+                      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </button>
         </div>
       </div>
     </header>
@@ -231,6 +256,13 @@ export default function App() {
   })
   const [progKey, setProgKey] = useState(0)
 
+  // Dark mode — persisted in localStorage
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+    localStorage.setItem('theme', dark ? 'dark' : 'light')
+  }, [dark])
+
   // Lifted up so results survive navigation between Analyse ↔ Progression
   const [xrayState, dispatch] = useReducer(xrayReducer, initialXrayState)
 
@@ -238,7 +270,7 @@ export default function App() {
     <BrowserRouter>
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
         <Disclaimer />
-        <NavBar />
+        <NavBar dark={dark} setDark={setDark} />
         <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={

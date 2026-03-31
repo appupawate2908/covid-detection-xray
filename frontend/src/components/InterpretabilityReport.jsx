@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 /* ─── Collapsible section ──────────────────────────────── */
 function Section({ title, badge, defaultOpen = true, children }) {
@@ -87,8 +89,37 @@ const EXPLAIN = {
 }
 
 /* ─── Clinical report card ─────────────────────────────── */
-function ClinicalReport({ report }) {
+function ClinicalReport({ report, reportRef }) {
   if (!report) return null
+
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownloadPDF = async () => {
+    if (!reportRef?.current) return
+    setDownloading(true)
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      })
+      const pdf  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const imgW = 210
+      const imgH = (canvas.height / canvas.width) * imgW
+      const pageH = 297
+      // Split into pages if content is taller than A4
+      let yPos = 0
+      while (yPos < imgH) {
+        if (yPos > 0) pdf.addPage()
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, -yPos, imgW, imgH)
+        yPos += pageH
+      }
+      pdf.save(`covid-xray-report-${new Date().toISOString().slice(0,10)}.pdf`)
+    } finally {
+      setDownloading(false)
+    }
+  }
   const uncColor =
     report.uncertainty_level === 'Low'      ? '#16a34a' :
     report.uncertainty_level === 'Moderate' ? '#ca8a04' : '#dc2626'
@@ -108,7 +139,27 @@ function ClinicalReport({ report }) {
             </p>
             <p className="font-extrabold text-lg text-white leading-tight">{report.title}</p>
           </div>
-          <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{report.generated_at}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-xs font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>{report.generated_at}</p>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.25)',
+                       color: '#fff', opacity: downloading ? 0.6 : 1, cursor: downloading ? 'wait' : 'pointer' }}
+            >
+              {downloading ? (
+                <span>Generating…</span>
+              ) : (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 1v7M3 6l3 3 3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Download PDF
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -191,6 +242,7 @@ function ClinicalReport({ report }) {
 /* ─── Main report ──────────────────────────────────────── */
 export default function InterpretabilityReport({ result }) {
   if (!result) return null
+  const reportRef = useRef(null)
   const { prediction, confidence, probabilities, severity_level, severity_label, severity_guidance, report } = result
   const exp = EXPLAIN[prediction] || EXPLAIN['Normal']
 
@@ -203,10 +255,10 @@ export default function InterpretabilityReport({ result }) {
   const sortedProbs = Object.entries(probabilities || {}).sort(([, a], [, b]) => b - a)
 
   return (
-    <div className="space-y-3 anim-fade-up">
+    <div className="space-y-3 anim-fade-up" ref={reportRef}>
 
       {/* Auto-generated clinical report (Feature B) */}
-      <ClinicalReport report={report} />
+      <ClinicalReport report={report} reportRef={reportRef} />
 
       {/* Summary box */}
       <div className="card p-5" style={{ borderLeft: `4px solid var(--blue)` }}>
