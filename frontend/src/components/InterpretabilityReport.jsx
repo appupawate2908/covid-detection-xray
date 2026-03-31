@@ -89,37 +89,8 @@ const EXPLAIN = {
 }
 
 /* ─── Clinical report card ─────────────────────────────── */
-function ClinicalReport({ report, reportRef }) {
+function ClinicalReport({ report }) {
   if (!report) return null
-
-  const [downloading, setDownloading] = useState(false)
-
-  const handleDownloadPDF = async () => {
-    if (!reportRef?.current) return
-    setDownloading(true)
-    try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      })
-      const pdf  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const imgW = 210
-      const imgH = (canvas.height / canvas.width) * imgW
-      const pageH = 297
-      // Split into pages if content is taller than A4
-      let yPos = 0
-      while (yPos < imgH) {
-        if (yPos > 0) pdf.addPage()
-        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, -yPos, imgW, imgH)
-        yPos += pageH
-      }
-      pdf.save(`covid-xray-report-${new Date().toISOString().slice(0,10)}.pdf`)
-    } finally {
-      setDownloading(false)
-    }
-  }
   const uncColor =
     report.uncertainty_level === 'Low'      ? '#16a34a' :
     report.uncertainty_level === 'Moderate' ? '#ca8a04' : '#dc2626'
@@ -242,23 +213,80 @@ function ClinicalReport({ report, reportRef }) {
 /* ─── Main report ──────────────────────────────────────── */
 export default function InterpretabilityReport({ result }) {
   if (!result) return null
-  const reportRef = useRef(null)
+  const reportRef  = useRef(null)
+  const [downloading, setDownloading] = useState(false)
+
   const { prediction, confidence, probabilities, severity_level, severity_label, severity_guidance, report } = result
   const exp = EXPLAIN[prediction] || EXPLAIN['Normal']
 
   const predColor =
-    prediction === 'COVID-19'        ? '#ef4444' :
-    prediction === 'Normal'           ? '#16a34a' :
-    '#d97706'
+    prediction === 'COVID-19' ? '#ef4444' :
+    prediction === 'Normal'   ? '#16a34a' : '#d97706'
 
   const sevColor = ['#16a34a', '#ca8a04', '#ea580c', '#dc2626'][severity_level] || '#64748b'
   const sortedProbs = Object.entries(probabilities || {}).sort(([, a], [, b]) => b - a)
 
-  return (
-    <div className="space-y-3 anim-fade-up" ref={reportRef}>
+  const handleDownloadPDF = async () => {
+    if (!reportRef?.current) return
+    setDownloading(true)
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      })
+      const pdf   = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const imgW  = 210
+      const imgH  = (canvas.height / canvas.width) * imgW
+      const pageH = 297
+      let yPos    = 0
+      while (yPos < imgH) {
+        if (yPos > 0) pdf.addPage()
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, -yPos, imgW, imgH)
+        yPos += pageH
+      }
+      pdf.save(`covid-xray-report-${new Date().toISOString().slice(0, 10)}.pdf`)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
-      {/* Auto-generated clinical report (Feature B) */}
-      <ClinicalReport report={report} reportRef={reportRef} />
+  return (
+    <div className="space-y-3 anim-fade-up">
+
+      {/* ── Prominent Download Button ───────────────────── */}
+      <button
+        onClick={handleDownloadPDF}
+        disabled={downloading}
+        className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-2xl font-bold text-sm transition-all duration-200"
+        style={{
+          background: downloading ? '#94a3b8' : 'linear-gradient(135deg,#16a34a,#15803d)',
+          color: '#fff',
+          boxShadow: downloading ? 'none' : '0 4px 14px rgba(22,163,74,0.35)',
+          cursor: downloading ? 'wait' : 'pointer',
+        }}
+      >
+        {downloading ? (
+          <>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
+              <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.4)" strokeWidth="2"/>
+              <path d="M8 2a6 6 0 0 1 6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            Generating PDF…
+          </>
+        ) : (
+          <>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2v9M5 8l3 3 3-3M2 13h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Download Full Report as PDF
+          </>
+        )}
+      </button>
+
+      {/* Everything below is captured into the PDF */}
+      <div ref={reportRef}>
+
+      {/* Auto-generated clinical report */}
+      <ClinicalReport report={report} />
 
       {/* Summary box */}
       <div className="card p-5" style={{ borderLeft: `4px solid var(--blue)` }}>
@@ -378,6 +406,7 @@ export default function InterpretabilityReport({ result }) {
           ))}
         </div>
       </Section>
+      </div>{/* end PDF capture div */}
     </div>
   )
 }
