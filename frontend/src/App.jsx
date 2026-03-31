@@ -71,7 +71,12 @@ function NavBar({ dark, setDark }) {
           <button
             onClick={() => setDark(d => !d)}
             className="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200"
-            style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
+            style={{
+              background: dark ? 'linear-gradient(135deg,#1a2744,#0d1829)' : 'var(--bg)',
+              border: dark ? '1px solid #2e5fff' : '1px solid var(--border)',
+              color: dark ? '#4d9fff' : 'var(--text-2)',
+              boxShadow: dark ? '0 0 12px rgba(77,159,255,0.25)' : 'none',
+            }}
             title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {dark ? (
