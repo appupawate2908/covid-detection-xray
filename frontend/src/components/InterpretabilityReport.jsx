@@ -224,7 +224,7 @@ export default function InterpretabilityReport({ result }) {
         <KV label="Confidence Score"   value={`${confidence.toFixed(2)}%`}         accent={predColor} />
         <KV label="Uncertainty (MC)"   value={`±${result.uncertainty?.toFixed(2)}% — ${result.uncertainty_level}`}
                                        accent={result.uncertainty_level === 'Low' ? '#16a34a' : result.uncertainty_level === 'Moderate' ? '#ca8a04' : '#dc2626'} />
-        <KV label="MC Dropout Passes"  value={`${result.mc_passes || 30} stochastic forward passes`} />
+        <KV label="MC Dropout Passes"  value={`${result.mc_passes || 10} stochastic forward passes`} />
         <KV label="Severity Level"     value={`L${severity_level} — ${severity_label}`} accent={sevColor} />
         <KV label="XAI Method"         value="Attention Rollout (Abnar & Zuidema, 2020)" />
         <KV label="Uncertainty Method" value="Monte Carlo Dropout (Gal & Ghahramani, 2016)" />

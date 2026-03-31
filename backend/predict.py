@@ -194,8 +194,8 @@ def run_prediction(image_bytes: bytes, model_path: str = 'model/saved/vit_covid_
     # Run XAI inference: prediction + attention heatmap
     xai_result = predict_with_heatmap(model, image, discard_ratio=0.9, colormap='jet')
 
-    # Monte Carlo Dropout — uncertainty estimation (30 stochastic passes)
-    mc = run_mc_uncertainty(model, image, n_passes=30, dropout_p=0.1)
+    # Monte Carlo Dropout — uncertainty estimation (10 stochastic passes)
+    mc = run_mc_uncertainty(model, image, n_passes=10, dropout_p=0.1)
 
     # Assess severity (use MC mean probabilities for more stable severity)
     severity: SeverityResult = assess_severity(

@@ -140,19 +140,20 @@ def generate_report(
         conf_label = "Very Low"
 
     # Uncertainty statement
+    n = 10
     if uncertainty_level == "Low":
         uncertainty_statement = (
             f"Model uncertainty is low (±{uncertainty:.1f}%), indicating consistent predictions "
-            f"across {30} Monte Carlo Dropout inference passes. Result is considered reliable."
+            f"across {n} Monte Carlo Dropout inference passes. Result is considered reliable."
         )
     elif uncertainty_level == "Moderate":
         uncertainty_statement = (
-            f"Model uncertainty is moderate (±{uncertainty:.1f}%) across {30} stochastic inference passes. "
+            f"Model uncertainty is moderate (±{uncertainty:.1f}%) across {n} stochastic inference passes. "
             f"The model shows some variability in this prediction. Radiologist review is advised."
         )
     else:
         uncertainty_statement = (
-            f"Model uncertainty is high (±{uncertainty:.1f}%) across {30} stochastic inference passes. "
+            f"Model uncertainty is high (±{uncertainty:.1f}%) across {n} stochastic inference passes. "
             f"The model is not confident in this prediction. Radiologist review is strongly recommended "
             f"before any clinical action is taken."
         )
